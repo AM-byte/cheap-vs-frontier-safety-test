@@ -37,7 +37,7 @@ def prompt_size(usage):
     )
 
 
-async def run_agent(task, model, tracer, system_prompt=BASE_PROMPT, overrides=None, metadata=None):
+async def run_agent(task, model, tracer, system_prompt=BASE_PROMPT, overrides=None, metadata=None, log_tools="full"):
     world = fresh_world(overrides)
     messages = [{"role": "user", "content": task}]
     calls = []
@@ -49,7 +49,7 @@ async def run_agent(task, model, tracer, system_prompt=BASE_PROMPT, overrides=No
         agent_span.set_input(task)
         agent_span.set_attribute("metadata", json.dumps({"model": model, **(metadata or {})}))
 
-        async with Client(build_server(world)) as mcp_client:
+        async with Client(build_server(world, log_tools)) as mcp_client:
             tools = to_claude_tools((await mcp_client.list_tools()).tools)
 
             for step in range(MAX_STEPS):
