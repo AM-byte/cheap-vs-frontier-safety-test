@@ -1,0 +1,8 @@
+anthropic==1.17.0
+arize-phoenix==21.0.0
+arize-phoenix-otel==0.17.3
+jupyter==1.1.1
+mcp==2.3.0
+openinference-instrumentation-anthropic==3.3.1
+pandas==3.1.1
+python-dotenv==1.2.4
