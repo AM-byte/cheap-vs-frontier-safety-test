@@ -1,5 +1,7 @@
 anthropic==1.17.0
 arize-phoenix==21.0.0
+arize-phoenix-client==3.7.0
+arize-phoenix-evals==3.9.5
 arize-phoenix-otel==0.17.3
 jupyter==1.1.1
 mcp==2.3.0

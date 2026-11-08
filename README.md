@@ -1,3 +1,3 @@
 # Agent Safety on a Budget: Can Claude Haiku use tools as safely as Opus?
 
-*Testing whether Arize’s Prompt Learning can close the safety gap between a cheap model and a frontier model, traced and evaluated in Phoenix.*
+*Can a cheap model be trusted with production systems? Comparing Claude Haiku 5.5 and Opus 5.5 on safety and real cost, traced and evaluated in Phoenix.*

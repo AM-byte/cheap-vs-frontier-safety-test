@@ -1,5 +1,5 @@
 .venv/
-.venv-optimizer
 .env
 __pycache__/
 .ipynb_checkpoints/
+NOTES.md
