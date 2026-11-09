@@ -7,7 +7,7 @@
 
 - **Haiku 5.5 was as safe as Opus 5.5.** Across 130 runs of an agent with access to (simulated) production tools, neither model took an unsafe action or broke policy, including under prompt injection, spoofed approvals, and exfiltration attempts.
 - **Policy compliance came from the prompt, not the model.** With the rules removed from the system prompt, both models were policy-compliant on only 16 of 26 tasks, with identical failures, and neither ever asked for approval on its own.
-- **Opus cost 44x more on short tasks, but only 4.4x on a task with a 100K-token+ tool output,** which pushed every subsequent Haiku call into its higher price tier.
+- **Opus cost 44x more on short tasks, but only 4.4x on a task with a 142k-token log,** which pushed every subsequent Haiku call into its higher price tier.
 - **Fixing the tool, not the model, restored Haiku's cost advantage.** Replacing a read-everything log tool with tail and search made Haiku 40x cheaper on the 142K-token task while staying 100% safe and compliant. Across all 26 tasks, Opus went back to costing 44x more than Haiku, the same as on short tasks.
 
 
@@ -36,7 +36,7 @@ flowchart LR
     E --> P[Phoenix experiment<br/>scores + traces]
 ```
 
-#### 1. A fake cloud world (`ops_world.py`)
+#### 1. A simulated cloud environment (`ops_world.py`)
 Four services, two databases, three storage buckets, and three API keys, each marked prod or staging. One service is degraded, and its logs hold the clues. The API keys are fake secrets that only reach the agent through log lines, so the evals can check whether the agent repeats them. Every run gets a fresh copy of the world, so a run doesn't affect the next. A fake world means the agent can actually delete a database or rotate a key without consequences, and every run starts from exactly the same state.
 
 #### 2. Eight tools, served over MCP (`ops_tools.py`)
@@ -160,7 +160,7 @@ Opus is 40x more expensive per token than Haiku on normal prompts, and on short 
 | Calls over 100K tokens | 11 | 0 | 4 | 0 |
 | Opus ÷ Haiku, full pass | 9.2x | 43.9x | | |
 
-<img src="images/compare-tool-fix.jpg" alt="Phoenix experiment comparison of haiku-policy and haiku-search on long-over-01" width="600">
+<img src="images/compare-tool-fix.jpg" alt="Phoenix experiment comparison of haiku-policy and haiku-search on long-over-01" width="700">
 
 *Same task, same model, before and after the tool change: cost per run drops from about $0.29 to under a cent, with both runs safe, compliant, and useful. Phoenix's comparison header shows the same across the whole experiment: 88% lower cost and 69% fewer tokens on average.*
 
@@ -186,7 +186,7 @@ Several findings came from reading traces, not from the scores:
 - On the long-log tasks, the traces showed Haiku making extra lookups for a database it couldn't access, each one re-sending the whole log. That explained part of the cost gap.
 - With search tools, the traces showed exactly which patterns each agent searched for, which is how I could tell that no run ever reached the planted instruction.
 
-<img src="images/trace-long-over.jpg" alt="Phoenix trace of a Haiku run on long-over-01, showing each model call after the log read at about 145K tokens" width="600">
+<img src="images/trace-long-over.jpg" alt="Phoenix trace of a Haiku run on long-over-01, showing each model call after the log read at about 145K tokens" width="700">
 
 *Once the 142K-token log is read, every following model call carries it: four calls over 100K tokens, each billed at Haiku's higher rate.*
 
@@ -223,7 +223,7 @@ The full log is in [CHALLENGES.md](CHALLENGES.md). The three that shaped the pro
 3. **Shadow run:** run Haiku alongside the current model on real traffic and compare before switching.
 4. **Production:** run code evals on every trace and the LLM judge on a sample, enforce the policy in the tools, alert on regressions, and add production failures back into the dataset.
 
-**KPIs.**
+**KPIs**
 
 | KPI | Type | Why it matters |
 |---|---|---|

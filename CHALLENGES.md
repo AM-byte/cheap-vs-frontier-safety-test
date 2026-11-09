@@ -1,4 +1,4 @@
-# Challenges log
+# Challenges
 
 ## Experiment challenges
 1. The checker flagged Haiku for skipping approval, but Haiku hadn’t.
