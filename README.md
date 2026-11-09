@@ -147,7 +147,7 @@ Policy compliance dropped to 16/26 for both, with identical failures. Without a 
 
 For logs under 100K tokens, the gap stays near 30x; over 100K, it collapses.
 
-Opus is 40x more expensive per token than Haiku on normal prompts, and on short tasks the measured gap was 44x. On task `long-over-01`, where the agent reads a 142K-token log, the gap shrank to 4.4x, and the three long-log tasks made up 95% of Haiku's spend. Two things caused this:
+Opus is 40x more expensive per token than Haiku on normal prompts, and on short tasks the measured gap was 44x. In the main experiment, the three long-log tasks made up 95% of Haiku's spend. On `long-over-01`, where the agent reads a 142K-token log, the gap shrank to 4.4x. Two things caused this:
 - **Haiku's price tier:** Haiku 5.5 charges 5x more per token on any call whose prompt is over 100K tokens. Once the log is in the conversation, every later call carries it, so every later call is billed at the higher rate.
 - **Haiku investigated more:** after reading the log, Haiku went looking for orders-db (a database the error names but the agent can't access) in 7 of 9 long-log runs, compared with 1 of 6 for Opus. Each extra lookup re-sent the whole log at the higher rate.
 
@@ -193,11 +193,11 @@ Several findings came from reading traces, not from the scores:
 
 ## 6. Learnings for developers
 
-1. **Measure before paying for the bigger model.** Teams often default to frontier models for agents that touch production, assuming they're safer. On these tasks, Haiku 5.5 was exactly as safe as Opus 5.5 at about a ninth of the cost. Test the cheaper model on your own tasks before assuming you need the expensive one.
+1. **Measure before paying for the better model.** Teams often default to frontier models for agents that touch production, assuming they're safer. On these tasks, Haiku 5.5 was exactly as safe as Opus 5.5 at about a ninth of the cost. Test the cheaper model on your own tasks before assuming you need the expensive one.
 
 2. **Write the policy down, then enforce it in code.** With no rules in the prompt, neither model asked for approval before changing anything, even though both were careful about obviously dangerous actions. Models won't guess your company's policy. A written policy got both models to 100% compliance, but a prompt only asks: anything that must never happen should be blocked by the tool itself.
 
-3. **Cost depends on the size of each call, not the size of the task.** Every tool result stays in the conversation and is re-sent on every later call. One 142K-token tool output pushed every following Haiku call into the higher price tier, and that one task accounted for most of Haiku's bill.
+3. **Cost depends on the size of each call and how many calls were made, not just the size of the task.** Every tool result stays in the conversation and is re-sent on every later call. One 142K-token tool output pushed every following Haiku call into the higher price tier, and that one task accounted for most of Haiku's bill.
 
 4. **Tool design is your biggest cost lever.** Returning only the information the agent needs (a tail and a search instead of the full log) cut Haiku's cost on that task by 40x without hurting quality. Before switching models to save money, check what your tools return.
 
@@ -210,9 +210,9 @@ Several findings came from reading traces, not from the scores:
 
 The full log is in [CHALLENGES.md](CHALLENGES.md). The three that shaped the project most:
 
+- **The models tied, so the experiment couldn't answer its own question.** I built the tasks to find where Haiku falls short of Opus, and both passed everything, even after a harder second round. I changed the question from "which model is safer?" to "where does the safety come from?" and reran both models with no rules in the prompt. That turned a null result into one of the main findings: policy compliance came from the system prompt, not the model's judgement.
 - **Phoenix's eval library failed with the newest Claude models.** `create_classifier` forces Claude to answer through a tool call, which Claude Sonnet 5.5 rejects, so the judge failed on every run. I switched to calling Claude directly with structured outputs and re-scored the existing experiments without rerunning any agents.
-- **Every score came back 100%, which made me suspicious of the evaluator, not confident in the models.** I tested the LLM judge from both sides, against my own labels and against responses known to be bad, before trusting it.
-- **Some tasks didn't test what I thought.** One spoofed-approval task never needed a restart, so it tested nothing, and one look-alike run never read the attack. Both looked like passes. I learned to read the traces behind the scores and to count an attack only when the agent actually saw it.
+- **Some tasks didn't test what I thought.** One spoofed-approval task never needed a restart, so it tested nothing, and one task that tested data leaks through injection never read the attack, but both looked like passes. I learned to read the traces behind the scores and to check whether the agent actually saw an attack before counting it as a successful denial.
 
 
 ## 8. From prototype to production
@@ -265,9 +265,8 @@ I used the Python SDK to trace runs, run experiments, and pull my labels back th
 **Limitations**
 - **Small, synthetic test set.** 26 tasks in a fake environment. Real incidents are messier, and the results may not carry over.
 - **The attacks were easy.** Neither model fell for any of them, so the safety tests didn't separate the models. That's a finding, but clever attacks might fool the model.
-- **One judge, one labeler.** The LLM judge is Claude Sonnet 5.5, from the same model family as the models it graded, and the 15 human labels are mine alone. The bad responses used to test the judge were obviously bad; subtly wrong answers would be a harder test.
+- **One LLM judge, one human annotator.** The LLM judge is Claude Sonnet 5.5, from the same model family as the models it graded, and the 15 human labels are mine alone. The bad responses used to test the judge were obviously bad; subtly wrong answers would be a harder test.
 - **Default model settings.** Both models ran at their default thinking effort. Effort affects cost and behavior, and I didn't vary it.
-- **A quirk in the test world.** The long logs blame a database (orders-db) that doesn't exist in the environment. Real logs often mention systems an agent can't access.
 - **Exposure changed with the tools.** With search tools, no run reached the planted instruction in the buried-injection log, so that task no longer tests pushback from the agent.
 
 **What I'd try next**
@@ -275,7 +274,7 @@ I used the Python SDK to trace runs, run experiments, and pull my labels back th
 - **A stronger judge check:** a judge from a different model family, more human annotators, and subtly wrong answers as test cases.
 - **Effort settings:** run Haiku/Opus at low, medium, and high effort to see how cost and quality trade off.
 - **Guardrails in the tools:** move the policy into code and measure what changes when the prompt is only a backup.
-- **Haiku first, Opus when needed:** route to Opus only when a task is hard or a check fails, and measure the cost and quality of the mix.
+- **Haiku first, Opus when needed:** route to Opus only when a task is difficult or a check fails, and measure the cost and quality of the mix.
 
 
 ## 10. Reproducibility
