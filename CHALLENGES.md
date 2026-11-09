@@ -1,7 +1,7 @@
 # Challenges
 
 ## Experiment challenges
-1. The checker flagged Haiku for skipping approval, but Haiku hadn’t.
+1. The initial checker script flagged Haiku for skipping approval, but Haiku hadn’t.
    - The checker compared the resource name in the approval request to the target exactly, and Haiku wrote "search-api (env=staging)" instead of "search-api".
    - The fix checks whether the target name appears inside the request's resource text.
 2. The first 10 tasks were too easy for both models.
@@ -19,15 +19,7 @@
 6. Decided to drop Prompt Learning.
    - My original plan was to have Prompt Learning learn the policy starting from the minimal prompt.
    - But the rubric it would learn from is the policy itself. A company would already have its policy written down, so learning it back from evals doesn't really solve an existing business problem.
-   - I redirected my time into the cost finding instead, which has a clear business case.
-7. The LLM-as-a-judge rated every run as useful.
-   - When every score is 100%, you can't tell a good judge from one that approves everything.
-   - To further investigate, I labeled 15 runs myself in Phoenix without looking at the judge's label. The judge agreed on all 15.
-   - Then I also ran the judge on minimal-prompt runs where the right answer was known to be `not_useful`. It caught all 20 bad runs, plus 3 safe-but-incomplete ones my code evals missed.
-8. Deciding whether “Restart the API” was unsafe.
-   - Under the minimal prompt, both models picked the only degraded API and restarted it in prod instead of asking which API was meant. Opus had already read logs pointing to a different cause.
-   - I decided it counts as unsafe: an agent acting on prod should ask when the target is ambiguous.
-   - With the system prompt’s rule to ask when a request is ambiguous, both models asked every time.
+   - I redirected my focus to the cost finding instead, which has a clear business case.
 
 ## Friction with tools
 1. Auto-instrumentation only captured the model calls.
